@@ -36,7 +36,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         if (username == null || password == null) {
             try {
                 ObjectMapper mapper = new ObjectMapper();
-                // JSON 요청을 Map으로 변환
                 java.util.Map<String, String> jsonRequest = mapper.readValue(request.getInputStream(), java.util.Map.class);
                 username = jsonRequest.get("username");
                 password = jsonRequest.get("password");
@@ -45,13 +44,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             }
         }
 
-        System.out.println("Username: " + username);
-        System.out.println("Password: " + password);
-
-        // 인증 토큰 생성 (권한 null)
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password);
-
-        // AuthenticationManager를 통해 인증 수행
         return authenticationManager.authenticate(authToken);
     }
 
@@ -61,17 +54,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();
 
-        // 권한 확인
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.isEmpty() ? "USER" : authorities.iterator().next().getAuthority();
 
-        // JWT 생성 (10시간 유효)
         String token = jwtUtil.createJwt(username, role, 60 * 60 * 10L);
 
-        // Authorization 헤더에 JWT 추가
         response.addHeader("Authorization", "Bearer " + token);
 
-        // JSON 형식으로 로그인 성공 메시지 반환 (선택)
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write("{\"status\": \"success\", \"token\": \"" + token + "\"}");
@@ -79,7 +68,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
